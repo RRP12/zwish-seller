@@ -19,11 +19,13 @@ export default function RootLayout() {
 
   return (
     <SessionProvider>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        {/* Make the app route primary and remove tabs completely */}
+        <Stack.Screen name="(app)"  options = {{headerShown: false} }/>
+        <Stack.Screen name="sign-in" />
+        <Stack.Screen name="otp-verify" />
+        <Stack.Screen name="onboarding" />
         <Stack.Screen name="+not-found" />
-        <Stack.Screen name="sign-in" options={{ headerShown: false }} />
-        <Stack.Screen name="otp-verify" options={{ headerShown: true }} />
       </Stack>
       <StatusBar style="auto" />
     </SessionProvider>

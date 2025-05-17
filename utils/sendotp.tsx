@@ -77,36 +77,50 @@ async function fetchUserMe(baseUrl: string, token?: string): Promise<any> {
   return response.json()
 }
 
-async function createUserProfile(profileData, jwtToken) {
-  console.log("jwtToken", jwtToken)
+const updateUserProfile = async (profileData ,token) => {
 
-  try {
-    const response = await fetch(
-      "https://zwishh-gateway-ce7mtpkb.an.gateway.dev/api/user/v1/me",
-      {
-        method: "PUT",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${jwtToken}`,
-        },
-        body: JSON.stringify(profileData),
-      }
-    )
 
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(
-        `Error ${response.status}: ${errorData.message || "Unknown error"}`
-      )
-    }
+let headersList = {
 
-    const data = await response.json()
-    return data
-  } catch (error) {
-    console.error("Error creating user profile:", error)
-    throw error
-  }
+ "Authorization": `Bearer ${token}`,
+ "Content-Type": "application/json" 
 }
 
-export { createUserProfile, fetchUserMe, sendOtp, verifyOtp }
+let bodyContent = JSON.stringify(profileData);
+
+let reqOptions = {
+  url: "https://zwishh-gateway-ce7mtpkb.an.gateway.dev/api/user/v1/me",
+  method: "PUT",
+  headers: headersList,
+  data: bodyContent,
+}
+
+let response = await axios.request(reqOptions);
+console.log(response.data);
+
+};
+
+
+
+const createAddress = async (addressData, token) => {
+  let headersList = {
+    "Authorization": `Bearer ${token}`,
+    "Content-Type": "application/json"
+  }
+
+  let bodyContent = JSON.stringify(addressData);
+
+  let reqOptions = {
+    url: "https://zwishh-gateway-ce7mtpkb.an.gateway.dev/api/user/v1/addresses",
+    method: "POST",
+    headers: headersList,
+    data: bodyContent,
+  }
+
+  let response = await axios.request(reqOptions);
+  console.log("response.data" , response.data);
+};
+
+
+export { createAddress, fetchUserMe, sendOtp, updateUserProfile, verifyOtp }
+

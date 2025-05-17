@@ -15,12 +15,21 @@ export default function App() {
   }, [])
   async function handelVerifyOtp() {
     console.log("phoneNumber", params)
-    let data = await verifyOtp(params?.phoneNumber, otp)
-    let { access_token } = data
+    try {
+      let data = await verifyOtp(params?.phoneNumber, otp)
+      console.log("OTP verification response:", data)
+      let { access_token } = data || {}
 
-    if (access_token) {
-      signIn(access_token)
-      router.push("/")
+      if (access_token) {
+        console.log("Access token received, signing in...")
+        await signIn(access_token)
+        console.log("Signed in, navigating to home")
+        router.push("/(app)/home")
+      } else {
+        console.log("No access token in response")
+      }
+    } catch (error) {
+      console.error("Error in OTP verification:", error)
     }
   }
   return (
