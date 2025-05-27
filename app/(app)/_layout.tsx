@@ -1,5 +1,5 @@
-import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { Tabs } from "expo-router"
+import { Feather, FontAwesome5, Ionicons } from '@expo/vector-icons'
+import { Stack, Tabs } from "expo-router"
 import { Text } from "react-native"
 
 import { useSession } from "../../ctx"
@@ -17,10 +17,10 @@ export default function AppLayout() {
   if (!session) {
     // For React Native, we can't access window.location
     // Instead, we'll handle the redirection in the root layout
-    return <Tabs />
+    return <Stack screenOptions={{ headerShown: false }} />
   }
 
-  // This layout can be deferred because it's not the root layout.
+  // Using Tabs for the main layout
   return (
     <Tabs
       screenOptions={{
@@ -47,7 +47,7 @@ export default function AppLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+            <Ionicons name="home-outline" size={size} color={color} />
           )
         }}
       />
@@ -56,7 +56,7 @@ export default function AppLayout() {
         options={{
           title: 'Categories',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="grid" size={size} color={color} />
+            <Ionicons name="grid-outline" size={size} color={color} />
           )
         }}
       />
@@ -65,7 +65,7 @@ export default function AppLayout() {
         options={{
           title: 'Feeds',
           tabBarIcon: ({ color, size }) => (
-            <Feather name="grid" size={size} color={color} />
+            <Ionicons name="camera-outline" size={size} color={color} />
           )
         }}
       />
@@ -74,7 +74,7 @@ export default function AppLayout() {
         options={{
           title: 'Try-on',
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="try" size={size} color={color} />
+            <FontAwesome5 name="user-alt" size={size-2} color={color} />
           )
         }}
       />
@@ -87,6 +87,29 @@ export default function AppLayout() {
           )
         }}
       />
+      
+      {/* Hidden screens */}
+      <Tabs.Screen
+        name="video-reels"
+        options={{
+          href: null,
+          // tabBarButton: () => null
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          href: null,
+          // tabBarButton: () => null
+        }}
+      />
+      <Tabs.Screen
+        name="location"
+        options={{
+          href: null,
+          // tabBarButton: () => null
+        }}
+      />
     </Tabs>
-  )
+  );
 }

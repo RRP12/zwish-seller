@@ -12,8 +12,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { useRouter } from 'expo-router';
-import LocationModal from '../../components/LocationModal';
 
 interface VideoPostProps {
   username: string
@@ -23,28 +21,8 @@ interface VideoPostProps {
 }
 
 const VideoPost = ({ username, profileColor, thumbnail, profileImage }: VideoPostProps) => {
-  const router = useRouter();
-
-  // Dummy data for navigation, replace with actual video URI and details
-  const videoDetailsForReel = {
-    id: username, // Using username as a temporary ID
-    uri: 'http://d23dyxeqlo5psv.cloudfront.net/big_buck_bunny.mp4', // Sample video for now
-    username: username,
-    profileImage: profileImage,
-    description: `A cool video by ${username}`,
-    likes: Math.floor(Math.random() * 1000),
-    comments: Math.floor(Math.random() * 100),
-  };
-
-  const handlePress = () => {
-    router.push({
-      pathname: '/video-reels',
-      params: { video: JSON.stringify(videoDetailsForReel) },
-    });
-  };
-
   return (
-    <TouchableOpacity onPress={handlePress} style={styles.videoPost} activeOpacity={0.8}>
+    <View style={styles.videoPost}>
       <Image source={thumbnail} style={styles.videoThumbnail} />
       <View style={[styles.playButton, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
         <Ionicons name="play" size={36} color="#00C9FF" />
@@ -59,15 +37,13 @@ const VideoPost = ({ username, profileColor, thumbnail, profileImage }: VideoPos
         )}
         <Text style={styles.username}>{username}</Text>
       </View>
-    </TouchableOpacity>
+    </View>
   )
 }
 
-export default function HomeScreen() {
+export default function SocialFeedScreen() {
   const { session } = useSession()
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState('All')
-  const [locationModalVisible, setLocationModalVisible] = useState(false)
 
   // In a real app, these would be actual images from your assets
   const placeholderImage = require('@/assets/images/icon.png')
@@ -87,27 +63,17 @@ export default function HomeScreen() {
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.locationContainer}
-          onPress={() => setLocationModalVisible(true)}
-        >
+        <View style={styles.locationContainer}>
           <Ionicons name="home" size={24} color="white" />
           <Text style={styles.headerTitle}>Home </Text>
           <Ionicons name="chevron-down" size={20} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity 
-          onPress={() => setLocationModalVisible(true)}
-        >
-          <Text style={styles.locationText}>Home - 156, 15th Flr, Maker Chamb...</Text>
-        </TouchableOpacity>
+        </View>
+        <Text style={styles.locationText}>Home - 156, 15th Flr, Maker Chamb...</Text>
         <View style={styles.headerActions}>
           <TouchableOpacity style={styles.iconButton}>
             <Ionicons name="heart-outline" size={24} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.iconButton}
-            onPress={() => router.push('/profile')}
-          >
+          <TouchableOpacity style={styles.iconButton}>
             <Ionicons name="person-circle-outline" size={24} color="white" />
           </TouchableOpacity>
         </View>
@@ -180,26 +146,7 @@ export default function HomeScreen() {
           ))}
         </View>
       </ScrollView>
-
       {/* Bottom navigation now handled by Expo Router tabs */}
-      
-      {/* Location Modal */}
-      <LocationModal
-        visible={locationModalVisible}
-        onClose={() => setLocationModalVisible(false)}
-        onContinue={() => {
-          console.log('Location permission granted');
-          // Handle location permission granted
-        }}
-        onAddNewLocation={() => {
-          console.log('Add new location');
-          // Navigate to add location screen or show another modal
-        }}
-        onSelectAddress={(address) => {
-          console.log('Selected address:', address);
-          // Handle selected address
-        }}
-      />
     </SafeAreaView>
   )
 }

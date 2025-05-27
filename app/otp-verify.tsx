@@ -1,4 +1,4 @@
-import { useSessionContext } from "@/ctx"
+import { useSession } from "@/ctx"
 import { verifyOtp } from "@/utils/sendotp"
 import { useLocalSearchParams, useRouter } from "expo-router"
 import { useEffect, useState } from "react"
@@ -7,7 +7,7 @@ import { OtpInput } from "react-native-otp-entry"
 
 export default function App() {
   let router = useRouter()
-  let { signIn } = useSessionContext()
+  let { signIn } = useSession()
   const [otp, setotp] = useState()
   const params = useLocalSearchParams()
   useEffect(() => {
