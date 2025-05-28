@@ -1,17 +1,10 @@
-import { useSession } from '@/ctx';
+import { useAuth } from '@/auth';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 
-
-// Placeholder for user data - in a real app, this would come from your auth context or API
-const userData = {
-  name: 'Nikhil',
-  // Using a simple avatar component instead of an image file
-  profileImage: null, // We'll render a placeholder avatar instead
-};
 
 // Menu item component for consistent styling
 interface MenuItemProps {
@@ -33,13 +26,11 @@ const MenuItem = ({ icon, title, onPress }: MenuItemProps) => (
 
 export default function ProfileScreen() {
   const router = useRouter();
-
-
-let {signOut} = useSession()
+  const { signOut, user } = useAuth();
 
   const handleBack = () => {
     // router.back();
-    signOut()
+    signOut();
   };
 
   const handleEditProfile = () => {
@@ -57,7 +48,7 @@ let {signOut} = useSession()
     console.log('Logging out');
     signOut();
     // Navigate to sign-in screen after logout
-    router.replace('/sign-in');
+    // router.replace('/sign-in'); // This line can be kept or removed as new signOut also navigates
   };
 
   return (
@@ -78,11 +69,11 @@ let {signOut} = useSession()
           <View style={styles.profileImageContainer}>
             {/* Simple avatar placeholder with user's initial */}
             <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarText}>{userData.name.charAt(0)}</Text>
+              <Text style={styles.avatarText}>{user?.name?.charAt(0) || 'U'}</Text>
             </View>
           </View>
           <View style={styles.nameContainer}>
-            <Text style={styles.profileName}>{userData.name}</Text>
+            <Text style={styles.profileName}>{user?.name || 'User Name'}</Text>
             <TouchableOpacity onPress={handleEditProfile}>
               <Feather name="edit-2" size={18} color="white" />
             </TouchableOpacity>

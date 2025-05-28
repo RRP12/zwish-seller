@@ -1,7 +1,7 @@
 import { useFonts } from "expo-font"
 import "react-native-reanimated"
 
-import { SessionProvider } from "@/ctx"
+import { AuthProvider } from "@/auth"
 import { useColorScheme } from "@/hooks/useColorScheme"
 import { Stack } from "expo-router"
 import { StatusBar } from "react-native"
@@ -18,7 +18,7 @@ export default function RootLayout() {
   }
 
   return (
-    <SessionProvider>
+    <AuthProvider>
       <Stack screenOptions={{ headerShown: false }}>
         {/* Make the app route primary and remove tabs completely */}
         <Stack.Screen name="(app)"  options = {{headerShown: false} }/>
@@ -28,6 +28,6 @@ export default function RootLayout() {
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
-    </SessionProvider>
+    </AuthProvider>
   )
 }
