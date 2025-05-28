@@ -54,11 +54,10 @@ let {signOut} = useSession()
 
   const handleLogout = () => {
     // Handle logout logic
-
-    signOut()
     console.log('Logging out');
-    // In a real app, you would clear auth tokens and navigate to login screen
-    // router.replace('/login');
+    signOut();
+    // Navigate to sign-in screen after logout
+    router.replace('/sign-in');
   };
 
   return (

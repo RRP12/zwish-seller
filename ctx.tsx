@@ -27,13 +27,14 @@ export function SessionProvider({ children}: PropsWithChildren) {
   const [[isLoading, session], setSession] = useStorageState("session")
 
   return (
-    <AuthContext
+    <AuthContext.Provider
       value={{
         signIn: (value: any) => {
-          // Perform sign-in logic here
-          setSession(null)
+          // Store the user session data
+          setSession(JSON.stringify(value))
         },
         signOut: () => {
+          // Clear the session data
           setSession(null)
         },
         session,
@@ -41,7 +42,7 @@ export function SessionProvider({ children}: PropsWithChildren) {
       }}
     >
       {children}
-    </AuthContext>
+    </AuthContext.Provider>
   )
 }
 

@@ -106,7 +106,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.iconButton}
-            onPress={() => router.push('/profile')}
+            onPress={() => router.push('/(app)/profile')}
           >
             <Ionicons name="person-circle-outline" size={24} color="white" />
           </TouchableOpacity>
