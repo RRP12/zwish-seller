@@ -1,33 +1,27 @@
-import { useFonts } from "expo-font"
-import "react-native-reanimated"
-
-import { AuthProvider } from "@/auth"
-import { useColorScheme } from "@/hooks/useColorScheme"
-import { Stack } from "expo-router"
-import { StatusBar } from "react-native"
+import { AuthProvider } from "@/utils/authContext";
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React from "react";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme()
-  const [loaded] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
-  })
-
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null
-  }
-
   return (
     <AuthProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        {/* Make the app route primary and remove tabs completely */}
-        <Stack.Screen name="(app)"  options = {{headerShown: false} }/>
-        <Stack.Screen name="sign-in" />
-        <Stack.Screen name="otp-verify" />
-        <Stack.Screen name="onboarding" />
-        <Stack.Screen name="+not-found" />
-      </Stack>
       <StatusBar style="auto" />
+      <Stack>
+        <Stack.Screen
+          name="(protected)"
+          options={{
+            headerShown: false,
+            animation: "none",
+          }}
+        />
+        <Stack.Screen
+          name="login"
+          options={{
+            animation: "none",
+          }}
+        />
+      </Stack>
     </AuthProvider>
-  )
+  );
 }
