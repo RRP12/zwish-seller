@@ -1,94 +1,115 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { SplashScreen, useRouter } from "expo-router";
-import { createContext, PropsWithChildren, useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { SplashScreen } from 'expo-router'; // Added SplashScreen
+import * as SecureStore from 'expo-secure-store';
+import { createContext, useContext, useEffect, useState } from 'react';
+import apiClient, { setupApiClientInterceptors } from './apiClient';
 
-// Prevent the splash screen from auto-hiding
-try {
-  SplashScreen.preventAutoHideAsync();
-} catch (e) {
-  console.log("Error preventing splash screen from auto-hiding", e);
+SplashScreen.preventAutoHideAsync(); // Prevent splash screen from auto-hiding
+
+interface AuthContextType {
+  accessToken: string | null;
+  refreshToken: string | null;
+  isLoggedIn: boolean;
+  isAuthLoading: boolean; // Added isAuthLoading
+  logIn: (accessToken: string, refreshToken: string) => void;
+  logOut: () => void;
+  refreshTokens: () => Promise<void>;
 }
 
-const authStorageKey = "auth-key";
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthContext = createContext<AuthState>({
-  isLoggedIn: false,
-  isReady: false,
-  logIn: () => {},
-  logOut: () => {},
-});
-
-export function AuthProvider({ children }: PropsWithChildren) {
-  const [isReady, setIsReady] = useState(false);
+export const AuthProvider = ({ children } : { children: React.ReactNode }) => {
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const router = useRouter();
+  const [isAuthLoading, setIsAuthLoading] = useState(true); // Added isAuthLoading state
 
-  console.log("isLoggedIn", isLoggedIn);
-
-  const storeAuthState = async (newState: { isLoggedIn: boolean }) => {
-    try {
-      const jsonValue = JSON.stringify(newState);
-      await AsyncStorage.setItem(authStorageKey, jsonValue);
-    } catch (error) {
-      console.log("Error saving", error);
-    }
-  };
-
-  const logIn = () => {
+  const logIn = (newAccessToken: string, newRefreshToken: string) => {
+    setAccessToken(newAccessToken);
+    setRefreshToken(newRefreshToken);
     setIsLoggedIn(true);
-    storeAuthState({ isLoggedIn: true });
-    // Use the correct route format for Expo Router 
+    SecureStore.setItemAsync('accessToken', newAccessToken);
+    SecureStore.setItemAsync('refreshToken', newRefreshToken);
   };
 
   const logOut = () => {
+    setAccessToken(null);
+    setRefreshToken(null);
     setIsLoggedIn(false);
-    storeAuthState({ isLoggedIn: false });
-    router.replace("/login");
+    SecureStore.deleteItemAsync('accessToken');
+    SecureStore.deleteItemAsync('refreshToken');
   };
 
-  useEffect(() => {
-    async function prepare() {
+  const refreshTokens = async () => {
+    const storedRefreshToken = await SecureStore.getItemAsync('refreshToken');
+    if (storedRefreshToken) {
       try {
-        // Always set to logged out for testing purposes
-        await AsyncStorage.removeItem(authStorageKey);
-        setIsLoggedIn(false);
-      } catch (e) {
-        console.warn("Failed to clear auth state", e);
-      } finally {
-        // Set ready state regardless of success/failure
-        setIsReady(true);
-        // Ensure splash screen is hidden
-        try {
-          await SplashScreen.hideAsync();
-        } catch (e) {
-          console.log("Error hiding splash screen", e);
-        }
+        const response = await apiClient.post('/refresh', { refreshToken: storedRefreshToken });
+        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data;
+        logIn(newAccessToken, newRefreshToken);
+      } catch (error) {
+        logOut();
       }
     }
+  };
+
+  // Setup API client interceptors
+  useEffect(() => {
+    setupApiClientInterceptors(
+      () => accessToken,
+      refreshTokens,
+      logOut
+    );
+  }, [accessToken, refreshTokens, logOut]);
+
+  // Enhanced initialization effect with better debugging
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        console.log('Initializing auth state from SecureStore...');
+        const storedAccessToken = await SecureStore.getItemAsync('accessToken');
+        const storedRefreshToken = await SecureStore.getItemAsync('refreshToken');
+        
+        console.log('Retrieved tokens:', { 
+          hasAccessToken: !!storedAccessToken, 
+          hasRefreshToken: !!storedRefreshToken 
+        });
+        
+        if (storedAccessToken && storedRefreshToken) {
+          console.log('Found valid tokens in storage, restoring session');
+          setAccessToken(storedAccessToken);
+          setRefreshToken(storedRefreshToken);
+          setIsLoggedIn(true);
+        } else {
+          console.log('No valid tokens found in storage');
+        }
+      } catch (error) {
+        console.error('Error initializing auth from storage:', error);
+      } finally {
+        setIsAuthLoading(false); // Set loading to false after attempt
+      }
+    };
     
-    prepare();
+    initializeAuth();
   }, []);
 
-  // If not ready yet, show a simple loading screen
-  if (!isReady) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text>Loading...</Text>
-      </View>
-    );
-  }
-  
+  // Hide SplashScreen when auth is no longer loading
+  useEffect(() => {
+    if (!isAuthLoading) {
+      SplashScreen.hideAsync();
+    }
+  }, [isAuthLoading]);
+
   return (
-    <AuthContext.Provider
-      value={{
-        isReady,
-        isLoggedIn,
-        logIn,
-        logOut,
-      }}
-    >
+    <AuthContext.Provider value={{ accessToken, refreshToken, isLoggedIn, isAuthLoading, logIn, logOut, refreshTokens }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

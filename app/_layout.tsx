@@ -19,6 +19,16 @@ export default function RootLayout() {
           name="login"
           options={{
             animation: "none",
+            title: "Login",
+            headerShown: false
+          }}
+        />
+        <Stack.Screen
+          name="verify-otp"
+          options={{
+            animation: "slide_from_right",
+            title: "OTP Verification",
+            headerShown: false
           }}
         />
       </Stack>

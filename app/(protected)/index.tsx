@@ -1,22 +1,22 @@
-import { AuthContext } from '@/utils/authContext';
-import React, { useContext } from 'react';
-import { StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from "@/utils/authContext";
+import { Button, SafeAreaView, Text } from "react-native";
 
-export default function Index () {
 
-    const authContext = useContext(AuthContext);
+export default function SomeComponent() {
+  const { isLoggedIn, logOut } = useAuth();
+
   return (
     <SafeAreaView>
-      <Text>Index screen main page  </Text>
 
-   
+      <Text>
 
-      <TouchableOpacity onPress={authContext.logOut}   >
-      <Text>LOg out  </Text>
-      </TouchableOpacity>
+        thisis the home screen
+      </Text>
+      {isLoggedIn ? (
+        <Button title="Log Out" onPress={logOut} />
+      ) : (
+        <Text>Please log in</Text>
+      )}
     </SafeAreaView>
-  )
-}
-
-const styles = StyleSheet.create({})
+  );
+};
