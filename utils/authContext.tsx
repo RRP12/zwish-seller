@@ -9,8 +9,9 @@ interface AuthContextType {
   accessToken: string | null;
   refreshToken: string | null;
   isLoggedIn: boolean;
-  isAuthLoading: boolean; // Added isAuthLoading
-  logIn: (accessToken: string, refreshToken: string) => void;
+  isAuthLoading: boolean;
+  isNewUser: boolean;
+  logIn: (accessToken: string, refreshToken: string, isNew: boolean) => void;
   logOut: () => void;
   refreshTokens: () => Promise<void>;
 }
@@ -21,14 +22,18 @@ export const AuthProvider = ({ children } : { children: React.ReactNode }) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAuthLoading, setIsAuthLoading] = useState(true); // Added isAuthLoading state
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isNewUser, setIsNewUser] = useState(false);
 
-  const logIn = (newAccessToken: string, newRefreshToken: string) => {
+  const logIn = (newAccessToken: string, newRefreshToken: string, isNew: boolean) => {
     setAccessToken(newAccessToken);
     setRefreshToken(newRefreshToken);
     setIsLoggedIn(true);
+    setIsNewUser(isNew); // Set isNewUser state
     SecureStore.setItemAsync('accessToken', newAccessToken);
     SecureStore.setItemAsync('refreshToken', newRefreshToken);
+    SecureStore.setItemAsync('isNewUser', JSON.stringify(isNew)); // Store isNewUser
+    // Onboarding status will be checked/set separately or based on isNew logic elsewhere
   };
 
   const logOut = () => {
@@ -37,6 +42,8 @@ export const AuthProvider = ({ children } : { children: React.ReactNode }) => {
     setIsLoggedIn(false);
     SecureStore.deleteItemAsync('accessToken');
     SecureStore.deleteItemAsync('refreshToken');
+    SecureStore.deleteItemAsync('isNewUser'); // Clear isNewUser on logout
+    setIsNewUser(false); // Reset in-memory state for isNewUser
   };
 
   const refreshTokens = async () => {
@@ -45,7 +52,7 @@ export const AuthProvider = ({ children } : { children: React.ReactNode }) => {
       try {
         const response = await apiClient.post('/refresh', { refreshToken: storedRefreshToken });
         const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data;
-        logIn(newAccessToken, newRefreshToken);
+        logIn(newAccessToken, newRefreshToken, false); // User is not new when refreshing tokens
       } catch (error) {
         logOut();
       }
@@ -79,6 +86,15 @@ export const AuthProvider = ({ children } : { children: React.ReactNode }) => {
           setAccessToken(storedAccessToken);
           setRefreshToken(storedRefreshToken);
           setIsLoggedIn(true);
+          // Load isNewUser status
+          const storedIsNewUser = await SecureStore.getItemAsync('isNewUser');
+          if (storedIsNewUser) {
+            const isNew = JSON.parse(storedIsNewUser);
+            setIsNewUser(isNew);
+            console.log('Loaded isNewUser status from storage:', isNew);
+          } else {
+            console.log('isNewUser status not found in storage.');
+          }
         } else {
           console.log('No valid tokens found in storage');
         }
@@ -100,7 +116,16 @@ export const AuthProvider = ({ children } : { children: React.ReactNode }) => {
   }, [isAuthLoading]);
 
   return (
-    <AuthContext.Provider value={{ accessToken, refreshToken, isLoggedIn, isAuthLoading, logIn, logOut, refreshTokens }}>
+    <AuthContext.Provider value={{ 
+      accessToken, 
+      refreshToken, 
+      isLoggedIn, 
+      isAuthLoading, 
+      isNewUser, 
+      logIn, 
+      logOut, 
+      refreshTokens
+    }}>
       {children}
     </AuthContext.Provider>
   );

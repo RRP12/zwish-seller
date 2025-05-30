@@ -42,7 +42,7 @@ export default function VerifyOtpScreen() {
     setIsResending(true);
     try {
       // Call API to resend OTP
-      await sendOtp(phoneNumber);
+      await sendOtp(phoneNumber, "seller");
       
       // Disable resend button for 30 seconds
       setResendDisabled(true);
@@ -66,11 +66,16 @@ export default function VerifyOtpScreen() {
       : params?.phoneNumber;
       
     try {
-      const res = await verifyOtp(phoneNumber, otp);
+      const res = await verifyOtp(phoneNumber, otp, "seller");
       
-      if (res) {
-        authContext.logIn(res.accessToken, res.refreshToken);
-        router.replace('/');
+      if (res && typeof res.accessToken === 'string' && typeof res.refreshToken === 'string' && typeof res.isNew === 'boolean') {
+        authContext.logIn(res.accessToken, res.refreshToken, res.isNew);
+        if (res.isNew) {
+          router.replace({ pathname: '/SellerOnboardingScreen', params: { phoneNumber: phoneNumber } });
+        } else {
+          // User is not new, navigate to the root screen
+          router.replace({ pathname: '/' }); 
+        }
       } else {
         throw new Error('Invalid authentication response');
       }

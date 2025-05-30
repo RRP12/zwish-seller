@@ -31,6 +31,7 @@ export default function ProtectedLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" /> {/* Ensure this matches your directory structure */}
+      <Stack.Screen name="add-reel" options={{ presentation: 'modal' }} />
       <Stack.Screen
         name="modal"
         options={{

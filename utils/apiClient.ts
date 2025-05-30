@@ -3,6 +3,7 @@ import axios from 'axios';
 // Create the API client without interceptors initially
 const apiClient = axios.create({
   baseURL: 'https://zwishh-gateway-ce7mtpkb.an.gateway.dev',
+ 
   timeout: 10000, // 10 second timeout
   headers: {
     'Content-Type': 'application/json',
