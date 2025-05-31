@@ -1,4 +1,4 @@
-import { sendOtp, verifyOtp } from "@/utils/api";
+import { fetchUserMe, sendOtp, verifyOtp } from "@/utils/api"; // Added fetchUserMe
 import { useAuth } from "@/utils/authContext";
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -68,12 +68,23 @@ export default function VerifyOtpScreen() {
     try {
       const res = await verifyOtp(phoneNumber, otp, "seller");
       
-      if (res && typeof res.accessToken === 'string' && typeof res.refreshToken === 'string' && typeof res.isNew === 'boolean') {
-        authContext.logIn(res.accessToken, res.refreshToken, res.isNew);
+      if (res && typeof res.accessToken === 'string' && typeof res.refreshToken === 'string' && typeof res.isNew === 'boolean' && res.user && typeof res.user.id === 'string') {
+        await authContext.logIn(res.accessToken, res.refreshToken, res.isNew);
+        authContext.setSellerId(res.user.id); // Set sellerId in AuthContext
         if (res.isNew) {
           router.replace({ pathname: '/SellerOnboardingScreen', params: { phoneNumber: phoneNumber } });
         } else {
-          // User is not new, navigate to the root screen
+          // User is not new, try to fetch user profile to get shop_id
+          try {
+            const userProfile = await fetchUserMe();
+            if (userProfile && userProfile.shop_id) {
+              authContext.setShopId(userProfile.shop_id.toString());
+            }
+          } catch (profileError) {
+            console.error('Failed to fetch user profile or shop_id after login:', profileError);
+            // Decide if this is a critical error or if the app can proceed without shop_id initially
+            // Alert.alert('Warning', 'Could not retrieve all user details. Some features might be limited.');
+          }
           router.replace({ pathname: '/' }); 
         }
       } else {

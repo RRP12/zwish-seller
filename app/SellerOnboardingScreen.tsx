@@ -1,8 +1,8 @@
 import { LinearGradient } from 'expo-linear-gradient'; // Added LinearGradient
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'; // Added Platform
-import { createSeller } from '../utils/api';
+import React, { useState, useEffect } from 'react'; // Added useEffect
+import { Alert, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native'; // Added Platform, ActivityIndicator
+import { createSeller, fetchUserMe, SellerCreationResponse } from '../utils/api'; // Added fetchUserMe and SellerCreationResponse
 import { useAuth } from '../utils/authContext';
 
 const SellerOnboardingScreen = () => {
@@ -25,8 +25,64 @@ const SellerOnboardingScreen = () => {
   const [bankAccountNumber, setBankAccountNumber] = useState('string');
   const [reBankAccountNumber, setReBankAccountNumber] = useState('string'); // Assuming re-entry should match
   const [ifscCode, setIfscCode] = useState('string');
+  const [isLoading, setIsLoading] = useState(false); // For loading indicator
+  const [isEditingMode, setIsEditingMode] = useState(false);
+  const [submitButtonText, setSubmitButtonText] = useState('Next');
 
-  const handleNext = async () => {
+  useEffect(() => {
+    const loadSellerData = async () => {
+      if (!phoneNumber && auth?.isLoggedIn) { // Editing existing seller from settings
+        setIsEditingMode(true);
+        setSubmitButtonText('Save');
+        setIsLoading(true);
+        setIsLoading(true);
+        try {
+          // Assuming fetchUserMe() returns the seller's profile data
+          // The response from fetchUserMe is UserProfile, which we updated to include shop_id.
+          // For seller-specific details, we might need a dedicated endpoint or ensure fetchUserMe returns all necessary fields.
+          // For now, let's assume fetchUserMe returns data compatible with SellerCreationResponse fields for simplicity.
+          // Or, if createSeller (PUT /api/seller/v1/me) is the source of truth for all seller fields, 
+          // and fetchUserMe only gives basic UserProfile, we might need a GET /api/seller/v1/me
+          const existingSellerData = await fetchUserMe() as unknown as SellerCreationResponse; // Casting for now
+          
+          if (existingSellerData) {
+            setEmail(existingSellerData.email || '');
+            setFirstName(existingSellerData.first_name || '');
+            setLastName(existingSellerData.last_name || '');
+            if (existingSellerData.date_of_birth) {
+              const [year, month, day] = existingSellerData.date_of_birth.split('-');
+              setDobYear(year || '');
+              setDobMonth(month || '');
+              setDobDay(day || '');
+            }
+            setGender(existingSellerData.gender || '');
+            // Assuming address is an object with line1, line2. Adjust if structure is different.
+            if (existingSellerData.address && typeof existingSellerData.address === 'object') {
+                setAddressLine1((existingSellerData.address as any).line1 || '');
+                setAddressLine2((existingSellerData.address as any).line2 || '');
+                // city, state, pincode might also be in existingSellerData.address
+            }
+            setGstNumber(existingSellerData.gst_number || '');
+            setAccountHolderName(existingSellerData.bank_name || '');
+            setBankAccountNumber(existingSellerData.bank_account_number || '');
+            setReBankAccountNumber(existingSellerData.bank_account_number || ''); // Pre-fill re-entry as well
+            setIfscCode(existingSellerData.bank_ifsc_code || '');
+          }
+        } catch (error) {
+          console.error('Failed to load existing seller data:', error);
+          Alert.alert('Error', 'Could not load your seller details. Please try again.');
+        }
+        setIsLoading(false);
+      } else { // New user onboarding
+        setIsEditingMode(false);
+        setSubmitButtonText('Next');
+      }
+    };
+
+    loadSellerData();
+  }, [phoneNumber, auth?.isLoggedIn]);
+
+  const handleSubmit = async () => {
     if (bankAccountNumber !== reBankAccountNumber) {
       Alert.alert('Error', 'Bank account numbers do not match.');
       return;
@@ -53,15 +109,38 @@ const SellerOnboardingScreen = () => {
       bank_ifsc_code: ifscCode,
     };
 
+    setIsLoading(true);
     try {
       console.log('Submitting seller data:', sellerData);
       const response = await createSeller(sellerData);
-      console.log('Seller created successfully:', response);
-      Alert.alert('Success', 'Seller details submitted! Proceed to Shop Details.');
-      router.push({ pathname: '/ShopDetailsScreen', params: { sellerId: response?.id } });
+      console.log('Seller created/updated:', response);
+
+      if (response && response.id) {
+        auth.setSellerId(String(response.id)); // Set sellerId in AuthContext
+        console.log('Seller ID set in AuthContext:', auth.sellerId); // Log sellerId from context
+      }
+
+      if (isEditingMode) {
+        Alert.alert('Success', 'Seller details updated successfully!');
+        router.back(); // Go back to the previous screen (Settings)
+      } else {
+        // New user onboarding flow
+        // The check for response && response.id is now done above to setSellerId
+        if (auth.sellerId) { // Check if sellerId was successfully set in context
+          Alert.alert('Success', 'Seller details submitted successfully!');
+          router.push({
+            pathname: '/ShopDetailsScreen',
+            params: { sellerId: auth.sellerId, phoneNumber: phoneNumber }, 
+          });
+        } else {
+          Alert.alert('Error', 'Failed to get seller ID after creation. Cannot proceed to shop details.');
+        }
+      }
     } catch (error: any) {
       console.error('Failed to create seller:', error);
       Alert.alert('Error', error.message || 'Failed to submit seller details.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -86,6 +165,9 @@ const SellerOnboardingScreen = () => {
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.mainTitle}>Seller Details</Text>
+
+        {isLoading && <ActivityIndicator size="large" color="#FFFFFF" style={{ marginVertical: 20 }} />} 
+        {/* Hide form or show overlay while isLoading ? */}
 
         <Text style={styles.label}>E-mail ID</Text>
         <TextInput
@@ -222,14 +304,9 @@ const SellerOnboardingScreen = () => {
           placeholderTextColor="#A0A0A0"
         />
 
-        <TouchableOpacity onPress={handleNext} style={styles.nextButtonContainer}>
-          <LinearGradient
-            colors={['#86D0E0', '#3B8FA3']}
-            style={styles.nextButtonGradient}
-            start={{ x: 0, y: 0.5 }}
-            end={{ x: 1, y: 0.5 }}
-          >
-            <Text style={styles.nextButtonText}>Next</Text>
+        <TouchableOpacity onPress={handleSubmit} style={styles.nextButtonContainer}>
+          <LinearGradient colors={['#FF6B00', '#FF9900']} style={styles.nextButtonGradient}>
+            <Text style={styles.buttonText}>{submitButtonText}</Text>
           </LinearGradient>
         </TouchableOpacity>
 

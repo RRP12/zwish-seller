@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ProductFormComponent from '../../components/product/ProductFormComponent';
 
 const AddReelScreen = () => {
@@ -10,7 +10,7 @@ const AddReelScreen = () => {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      {/* Custom Header */}
+    
       <View style={styles.headerContainer}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <MaterialCommunityIcons name="arrow-left" size={28} color="#FFFFFF" />

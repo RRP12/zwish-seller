@@ -48,7 +48,7 @@ const ProfileScreen = () => {
       {/* Header */}
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>LikeRA</Text>
-        <TouchableOpacity style={styles.menuButton}>
+        <TouchableOpacity style={styles.menuButton} onPress={() => router.push('/SettingsScreen')}>
           <MaterialCommunityIcons name="menu" size={30} color="#FFFFFF" />
         </TouchableOpacity>
       </View>

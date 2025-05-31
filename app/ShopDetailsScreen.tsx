@@ -3,13 +3,15 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { createShop, ShopData } from '../utils/api'; // Import createShop and ShopData
+import { useAuth } from '../utils/authContext'; // Import useAuth
 
 const ShopDetailsScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{ sellerId?: string }>();
   const sellerIdParam = params.sellerId;
+  const { setShopId } = useAuth(); // Get setShopId from AuthContext
   console.log('Received sellerIdParam in ShopDetailsScreen:', sellerIdParam);
-
+console.log('setShopId', setShopId);
   const [name, setName] = useState('Demo Shop');
   const [category, setCategory] = useState<'Clothing' | 'Footwear'>('Clothing'); // API expects 'Clothing' or 'Footwear'
   const [streetAddress, setStreetAddress] = useState('123 Demo Street');
@@ -54,10 +56,18 @@ const ShopDetailsScreen = () => {
       console.log('ShopData being sent from handleSaveShopDetails:', JSON.stringify(shopData, null, 2));
       const response = await createShop(shopData);
 
-      console.log("response", response); 
-      Alert.alert('Success', 'Shop details saved successfully!');
-      // Navigate to the next screen or dashboard, e.g., back to a home or shop list
-      router.replace('/'); // Navigate to Home Screen (Update to /SellerDashboard when screen exists)
+      console.log("response", response);
+      if (response && response.id) {
+        setShopId(response.id.toString()); // Save shopId to AuthContext (ensure it's a string)
+        Alert.alert('Success', 'Shop details saved successfully!');
+        // Navigate to the next screen or dashboard, e.g., back to a home or shop list
+        router.replace('/'); // Navigate to Home Screen (Update to /SellerDashboard when screen exists)
+      } else {
+        console.error('Shop ID not found in createShop response:', response);
+        Alert.alert('Error', 'Shop created, but failed to retrieve Shop ID.');
+        // Potentially still navigate or offer retry
+        router.replace('/'); // Or navigate to a screen indicating partial success/error
+      }
     } catch (error: any) {
       console.error('Failed to save shop details:', error);
       Alert.alert('Error', error.message || 'Failed to save shop details.');
